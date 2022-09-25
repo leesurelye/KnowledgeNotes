@@ -36,7 +36,7 @@ awk 'BEGIN{ commands } pattern{ commands } END{ commands }'
 
 7、开始 END 块执行，END 块可以输出最终结果。
 
-> 开始块 Begin【可选】
+**1. 开始块 Begin【可选】**
 
 ```shell
 BEGIN {awk-commands}
@@ -44,7 +44,7 @@ BEGIN {awk-commands}
 
 开始块就是在程序启动的时候执行的代码部分，并且它在整个过程中只执行一次。一般情况下，我们可以在开始块中初始化一些变量。BEGIN 是 AWK 的关键字，因此它必须是大写的。
 
-> 主体块 Body 
+**2. 主体块 Body **
 
 ```shell
 pattern {awk-commands}
@@ -54,11 +54,43 @@ pattern {awk-commands}
 
 **注意**：在主体块部分没有关键字存在。
 
-> 结束块 End
+**3. 结束块 End 【可选】**
 
 ```shell
 END {awk-commands}
 ```
+
+结束块是在程序结束时执行的代码。 END 也是 AWK 的关键字，它也必须大写。 与开始块相似，结束块也是可选的。
+
+> 实例
+
+
+
+
+
+# sed
+
+> 介绍
+
+sed是Linux中的一个文件编辑工具，按行处理文件内容，可以实现插入，删除，替换等功能。更重要的是sed命令可以用script来处理文本文件，能够应对复杂的编辑需求。
+
+> 语法格式
+
+```shell
+sed [option] [filename]
+```
+
+**选项**
+
+`-e <script>` 按script编辑文本并输出到控制台，但**不修改原文件内容**
+
+`-f filename` 调用sed脚本文件
+
+`-i` 直接修改读取的文件内容，但不输出到终端
+
+`-n` 使用安静模式，只有经过sed处理的行才会被显示出来
+
+`-r` 使用延伸型的正则表达式语法，预设的是基础的正则语法
 
 
 
