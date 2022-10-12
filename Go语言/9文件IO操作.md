@@ -118,7 +118,7 @@ func main() {
 
 创建目录时，如果目录存在，则创建失败。Go语言提供了两种方法：
 
-> os.MKdir(): 仅仅创建单级目录
+> os.Mkdir(): 仅创建单级目录
 
 Mkdir create a new directory with the specified name and permission bits. If there is an error, it will be of type *PathError.
 
@@ -150,4 +150,239 @@ func main() {
 ## 2. 创建文件
 
 > os.Create()： 如果文件存在，则将其覆盖
+
+`os.Create()` creates the named file with mode 0666, truncating it if it already exists. os.Create() --> *File
+
+该函数本质上是调用`os.OpenFile()`函数，使用方式：
+
+```go
+func main() {
+	dirName := "./test1"
+	err := os.Mkdir(dirName, os.ModePerm)
+	if err == nil {
+		fileName := "./test1/abc.txt"
+		file1, err := os.Create(fileName)
+		if err == nil {
+			fmt.Printf("create success %v", file1) 
+			// create success &{0x14000122120}
+		} else {
+			fmt.Println("error:", err.Error())
+		}
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+}
+```
+
+## 3. 打开关闭文件
+
+让当前的程序和指定的文件建立一个链接。
+
+> os.Open()
+
+Open() opens the named file for reading. If successful, methods on the returned file can be used for reading; the associated file descriptor has mode `O_RDONLY`. os.Open(fileName) --> *File
+
+该函数本质上是调用`os.OpenFile()`函数. `os.OpenFile(filename, mode, perm) --> *File`
+
+- filename : 文件名称
+- mode: 文件打开方式，可以同时使用多个方式，用`|`隔开。
+
+- perm: 文件权限。文件不存在时创建文件，需要指定权限。
+
+<center><strong>文件打开方式</strong></center>
+
+| 关键字   | 模式             |
+| -------- | ---------------- |
+| O_RDONLY | 只读模式         |
+| O_WRONLY | 只写模式         |
+| O_RDWR   | 读写模式         |
+| O_APPEND | 追加模式         |
+| O_RDONLY | 文件不存在就创建 |
+
+> file.Close()
+
+关闭文件，程序和文件之间的链接断开，通常与打开文件配对使用。
+
+```go
+func main() {
+	fileName1 := "./test1/abc.txt"
+	file1, err := os.Open(fileName1)
+	if err == nil {
+		fmt.Printf("open success, file: %v\n", file1)
+		// open success, file: &{0x14000070120}
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+	// 以读写的方式打开，如果文件不存在就创建
+	fileName2 := "./test1/abc1.txt"
+	file2, err := os.OpenFile(fileName2, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err == nil {
+		fmt.Printf("open success, file: %v\n", file2)
+		// open success, file: &{0x14000070180}
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+	file1.Close()
+	file2.Close()
+}
+```
+
+## 4. 删除文件
+
+删除文件有两种方法：
+
+- os.Remove() 删除已命名的文件或**空目录**，如果删除的不是空目录，那么系统会报错
+- os.RemoveAll() 移除所有的路径和他包含的任何子节点
+
+```go
+func main() {
+	file1 := "./test1/abc.txt"
+	err := os.Remove(file1)
+	if err == nil {
+		fmt.Printf("delete successful %s\n", file1)
+		// delete successful ./test1/abc.txt
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+	file2 := "./test1/abc1.txt"
+	err = os.RemoveAll(file2)
+	if err == nil {
+		fmt.Printf("delete successful %s\n", file2)
+		//delete successful ./test1/abc1.txt
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+}
+```
+
+## 5. 读取文件
+
+读取文件的步骤如下：
+
+1. 打开文件
+
+```go
+os.Open(fileName)
+```
+
+2. 读取文件
+
+从文件中开始读取数据，返回值 n 是十几读取的字节数，如果读取到文件末尾，n = 0 或 err为`io.EOF`.
+
+3. 关闭文件
+
+```go
+func main() {
+	fileName := "./test1/abc.txt"
+	file, err := os.Open(fileName)
+	if err == nil {
+		bs := make([]byte, 1024, 1024) // buffers
+		n := -1
+		for {
+			n, err = file.Read(bs)
+			if n == 0 || err == io.EOF {
+				fmt.Println("file read over")
+				break
+			}
+			fmt.Println(string(bs[:n]))
+		}
+	} else {
+		fmt.Println("error: ", err.Error())
+	}
+}
+```
+
+## 6. 写入文件
+
+写入文件的步骤如下：
+
+1. 打开或创建文件
+
+```go
+os.OpenFile()
+```
+
+2. 写入文件
+
+```go
+file.Write([]byte) n, err
+file.WriteString([]byte) n, err
+```
+
+ n 表示写入的字节数
+
+3. 关闭文件
+
+```go
+func main() {
+	file, err := os.OpenFile("./test1/abc.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, os.ModePerm)
+  // 追加模式
+	defer file.Close()
+	if err == nil { // 如果打开文件成功
+		n, err := file.Write([]byte("abcdef12345\n"))
+		if err == nil { // 如果写入文件成功
+			fmt.Printf("write successful, n = %d\n", n)
+		} else {
+			fmt.Println("error:", err.Error())
+		}
+		// =====
+		n, err = file.WriteString("测试\n")
+		if err == nil {
+			fmt.Printf("write successful, n = %d\n", n)
+		} else {
+			fmt.Println("error:", err.Error())
+		}
+	} else {
+		fmt.Println("error:", err.Error())
+	}
+}
+```
+
+## 7.复制文件
+
+> io.Copy() 复制文件
+
+```go
+func copyFile(srcFile, destFile string) (int64, error) {
+	file1, err := os.Open(srcFile)
+	if err != nil {
+		return 0, err
+	}
+	file2, err := os.OpenFile(destFile, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return 0, err
+	}
+	defer file1.Close()
+	defer file2.Close()
+	return io.Copy(file2, file1)
+}
+```
+
+```go
+func main() {
+	total, err := copyFile("./test1/abc.txt", "./test1/abc_1.txt")
+	if err != nil {
+		fmt.Println("error:", err.Error())
+	} else {
+		fmt.Printf("copy finish, %d\n", total)
+	}
+}
+```
+
+# ioutil
+
+ioutil包的核心函数如下所示
+
+| 方法              | 作用                                                         |
+| ----------------- | ------------------------------------------------------------ |
+| ReadFile() []byte | 读取文件中的所有数据,返回读取的字节数组                      |
+| WriteFile()       | 向指定文件写入数据，如果文件不存在，则创建文件，写入数据前晴空文件 |
+| ReadDir()         | 读取一个目录下的子内容(子文件和子目录名称)，但是仅读取一层   |
+| TempDir(fileName) | 在当前目录下，创建一个名为`fileName`前缀的临时文件夹，并返回文件夹路径 |
+| TempFile()        | 在当前目录下，创建一个名为`fileName`前缀的临时文件，并以读写模式打开文件，并返回`os.File`指针对象 |
+
+```go
+```
+
+# bufio
 
